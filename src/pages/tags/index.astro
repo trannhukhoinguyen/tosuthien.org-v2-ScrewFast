@@ -1,0 +1,22 @@
+---
+import Layout from "../../layouts/Layout.astro";
+import { TAG_MAP } from "../../utils/getMarkdownContent";
+import AllBadges from "../../components/post/AllBadges.astro";
+
+const title = "🎏 Tag";
+const type = "tag";
+const path = "tags";
+const description = "Xem tất cả Tag";
+const allTags = Object.entries(TAG_MAP);
+---
+
+<Layout title={title} description={description} showSidebar={true}>
+  <div class="badges-page">
+    <header class="page-header">
+      <h1 class="page-title">{title}</h1>
+      <hr class="page-rule" />
+    </header>
+
+    <AllBadges allBadges={allTags} path={path} type={type} />
+  </div>
+</Layout>

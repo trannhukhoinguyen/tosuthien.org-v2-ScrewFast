@@ -1,0 +1,452 @@
+---
+import { zenHallList } from '@/data/ZenHallData';
+import FacebookPost from '@/components/ui/FacebookPost.astro';
+import GoogleMap from '@/components/ui/map/GoogleMap.astro';
+import Layout from "@/layouts/Layout.astro";
+
+const title = 'Cúng dường';
+const description = 'Thông tin nơi tiếp nhận cúng dường các Thiền Viện';
+
+// 1. Phân loại Quốc gia
+const vnPagodas = zenHallList.filter(p => p.countryCode === 'VN');
+const usPagodas = zenHallList.filter(p => p.countryCode === 'US');
+
+// 2. Phân loại 3 Miền cho Việt Nam (Bắc - Trung - Nam)
+const vnBacPagodas = vnPagodas.filter(p => p.region === 'BAC');
+const vnTrungPagodas = vnPagodas.filter(p => p.region === 'TRUNG');
+const vnNamPagodas = vnPagodas.filter(p => p.region === 'NAM' || (!['BAC', 'TRUNG'].includes(p.region || '')));
+
+function getGlobalPosition(region: string, lat: number, lng: number, localX: number, localY: number) {
+  const boxes = {
+    vn: { top: 5, left: 5, width: 90, height: 40 },
+    us: { top: 52, left: 5, width: 90, height: 40 }
+  };
+  const box = boxes[region] || boxes.vn;
+  const globalLeft = box.left + ((lat || localX) * box.width) / 100;
+  const globalTop = box.top + ((lng || localY) * box.height) / 100;
+  return `top: ${globalTop}%; left: ${globalLeft}%;`;
+}
+---
+
+<Layout schemaType="Article" title={title} description={description} showSidebar={false}>
+  <div class="map-layout">
+
+    <!-- CỘT BÊN TRÁI: DANH SÁCH / BẢN ĐỒ -->
+    <div class="sidebar-left">
+      <!-- Thanh chuyển đổi Dạng xem -->
+      <div class="view-toggle">
+        <button class="toggle-btn active" data-view="list">
+          <span class="btn-icon">📋</span> Danh sách ({zenHallList.length})
+        </button>
+        <!--<button class="toggle-btn" data-view="map">Bản đồ</button>-->
+      </div>
+
+      <!-- VIEW DANH SÁCH (SIDEBAR LIST) -->
+      <div class="view-content view-list active">
+        <div class="pagoda-list-container">
+
+          <!-- Nhóm Việt Nam -->
+          <div class="list-group">
+            <div class="group-title">🇻🇳 VIỆT NAM ({vnPagodas.length})</div>
+
+            <!-- Miền Nam -->
+            {vnNamPagodas.length > 0 && (
+              <div class="sub-group">
+                <div class="sub-group-title">🟢 Miền Nam ({vnNamPagodas.length})</div>
+                {vnNamPagodas.map((item, index) => (
+                  <div class={`list-item trigger-item ${(vnBacPagodas.length === 0 && vnTrungPagodas.length === 0 && index === 0) ? 'active' : ''}`} data-id={item.id}>
+                    <div class="item-title">{item.templeName}</div>
+                    <div class="item-address">{item.placeAddress || item.address}</div>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            <!-- Miền Bắc -->
+            {vnBacPagodas.length > 0 && (
+              <div class="sub-group">
+                <div class="sub-group-title">🔴 Miền Bắc ({vnBacPagodas.length})</div>
+                {vnBacPagodas.map((item, index) => (
+                  <div class={`list-item trigger-item ${index === 0 ? 'active' : ''}`} data-id={item.id}>
+                    <div class="item-title">{item.templeName}</div>
+                    <div class="item-address">{item.placeAddress || item.address}</div>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            <!-- Miền Trung -->
+            {vnTrungPagodas.length > 0 && (
+              <div class="sub-group">
+                <div class="sub-group-title">🟡 Miền Trung ({vnTrungPagodas.length})</div>
+                {vnTrungPagodas.map((item) => (
+                  <div class="list-item trigger-item" data-id={item.id}>
+                    <div class="item-title">{item.templeName}</div>
+                    <div class="item-address">{item.placeAddress || item.address}</div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+
+          <!-- Nhóm Mỹ -->
+          {usPagodas.length > 0 && (
+            <div class="list-group">
+              <div class="group-title">🇺🇸 HOA KỲ ({usPagodas.length})</div>
+              {usPagodas.map((item) => (
+                <div class="list-item trigger-item" data-id={item.id}>
+                  <div class="item-title">{item.templeName}</div>
+                  <div class="item-address">{item.placeAddress || item.address}</div>
+                </div>
+              ))}
+            </div>
+          )}
+
+        </div>
+      </div>
+    </div>
+
+    <!-- CỘT BÊN PHẢI: KHUNG THÔNG TIN CÚNG DƯỜNG -->
+    <div class="info-sidebar" id="infoSidebar">
+      {zenHallList.map((data, index) => (
+        <div class={`info-panel ${index === 0 ? 'active' : ''}`} id={`panel-${data.id}`}>
+
+          <div class="donation-receiving-info-area">
+            <h3 class="donation-header-title">THÔNG TIN NƠI TIẾP NHẬN CÚNG DƯỜNG</h3>
+            <p class="donation-header-subtitle">Các bạn có thể xem thông báo chính thức từ chùa tại bài đăng bên dưới.</p>
+            <section class="donation-section">
+              {data.facebookPostUrl && (
+                <div id="fb-post" class="fb-fallback">
+                  <h4 class="donation-header-title">THÔNG BÁO</h4>
+                  <FacebookPost url={data.facebookPostUrl} />
+                </div>
+              )}
+
+              {(data.announcement1 && data.announcement2) && (
+                <div class="qr-image-area">
+                  <img class="w-250" src={data.announcement1} alt="Notification 1" width="300" />
+                  <img class="w-250" src={data.announcement2} alt="Notification 2" width="300" />
+                </div>
+              )}
+
+              {data.thanksFacebookCommentUrl && (
+                <div id="thanks-fb-comment" class="fb-fallback">
+                  <h4 class="donation-header-title">LỜI NGỎ CẢM ƠN</h4>
+                  <img class="w-full" src={data.thanksFacebookCommentUrl} alt="LỜI NGỎ CẢM ƠN" />
+                </div>
+              )}
+            </section>
+          </div>
+
+          <div class="donation-receiving-info-area">
+            <header class="donation-header">
+              <h3 class="donation-header-title">TÀI KHOẢN NHẬN CÚNG DƯỜNG</h3>
+            </header>
+
+            <div class="receiving-info-area">
+              <p>Mọi sự phát tâm ủng hộ, xin Quý vị gửi vào thông tin tài khoản bên dưới:</p>
+              <p>(Quý vị nên ghi rõ: <b>Tên, Pháp danh (nếu có), Cúng dường cho: {data.eventTitle}</b>)</p>
+              <ul>
+                <li>Số tài khoản: <b>{data.bankNumber}</b></li>
+                <li>Chủ tài khoản: <b>{data.bankHost}</b></li>
+                <li>Tên ngân hàng: <b>{data.bankName}</b></li>
+                <li>{data.bankHostRole} <b>{data.placeName}</b> toạ lạc tại <b>{data.placeAddress}</b></li>
+              </ul>
+            </div>
+
+            <div class="qr-image-area">
+              {data.bankQrSrc && <img class="w-250" src={data.bankQrSrc} alt="QR" width="300" />}
+              {data.bankAccountSrc && <img class="w-250" src={data.bankAccountSrc} alt="Bank Account" width="300" />}
+            </div>
+
+            <div class="receiving-info-area">
+              {data.googleMap && <GoogleMap embed={data.googleMap} />}
+            </div>
+
+            <h3 class="thank-you-message">XIN CHÂN THÀNH CẢM ƠN!</h3>
+          </div>
+
+        </div>
+      ))}
+    </div>
+  </div>
+</Layout>
+
+<style>
+    /* BỐ CỤC CHÍNH */
+    .map-layout {
+        display: flex;
+        gap: 24px;
+        align-items: flex-start;
+    }
+
+    /* CỘT BÊN TRÁI */
+    .sidebar-left {
+        width: 380px;
+        flex-shrink: 0;
+    }
+
+    /* 1. TAB CHUYỂN ĐỔI */
+    .view-toggle {
+        display: flex;
+        gap: 8px;
+        background: #f4f4f5;
+        padding: 5px;
+        border-radius: 8px;
+        border: 1px solid #e4e4e7;
+        margin-bottom: 12px;
+    }
+
+    .toggle-btn {
+        flex: 1;
+        padding: 8px 12px;
+        border: none;
+        background: transparent;
+        cursor: pointer;
+        border-radius: 6px;
+        font-weight: 600;
+        color: #52525b;
+        transition: all 0.2s ease;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 6px;
+    }
+
+    .toggle-btn.active {
+        background: #f59e0b;
+        color: #000000 !important;
+        box-shadow: 0 2px 6px rgba(245, 158, 11, 0.25);
+    }
+
+    /* 2. CONTAINER DANH SÁCH */
+    .pagoda-list-container {
+        height: 650px;
+        overflow-y: auto;
+        border: 1px solid #e4e4e7;
+        border-radius: 10px;
+        padding: 12px;
+        background: #fafafa;
+        display: flex;
+        flex-direction: column;
+        gap: 16px;
+    }
+
+    /* Tiêu đề nhóm Quốc gia (Cấp 1) */
+    .group-title {
+        font-size: 14px;
+        font-weight: 800;
+        color: #b45309;
+        margin-bottom: 10px;
+        padding-bottom: 6px;
+        border-bottom: 2px solid #fde68a;
+        letter-spacing: 0.5px;
+    }
+
+    /* Nhóm 3 Miền (Cấp 2) */
+    .sub-group {
+        margin-bottom: 12px;
+        padding-left: 4px;
+    }
+
+    .sub-group-title {
+        font-size: 12.5px;
+        font-weight: 700;
+        color: #71717a;
+        margin-bottom: 6px;
+        padding: 3px 8px;
+        background: #f4f4f5;
+        border-radius: 4px;
+        display: inline-block;
+    }
+
+    /* Item thiền đường */
+    .list-item {
+        padding: 10px 12px;
+        background: #ffffff;
+        border: 1px solid #e4e4e7;
+        border-radius: 8px;
+        margin-bottom: 6px;
+        cursor: pointer;
+        transition: all 0.2s ease;
+    }
+
+    .list-item:hover {
+        border-color: #d97706;
+        background: #fffbe2;
+        transform: translateX(3px);
+    }
+
+    .list-item.active {
+        border-color: #d97706;
+        background: #fef3c7 !important;
+        box-shadow: inset 4px 0 0 #d97706;
+    }
+
+    .item-title {
+        font-weight: 600;
+        font-size: 14px;
+        color: #18181b !important;
+        margin-bottom: 3px;
+    }
+
+    .list-item.active .item-title {
+        color: #92400e !important;
+    }
+
+    .item-address {
+        font-size: 12px;
+        color: #52525b !important;
+        line-height: 1.35;
+    }
+
+    .list-item.active .item-address {
+        color: #78350f !important;
+    }
+
+    /* CỘT BÊN PHẢI (PANEL) */
+
+    .info-sidebar {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+        background: #ffffff;
+        border: 1px solid #e4e4e7;
+        border-radius: 10px;
+        padding: 20px;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.03);
+    }
+
+    .info-panel {
+        display: none;
+        animation: fadeIn 0.3s ease;
+    }
+
+    .info-panel.active {
+        display: block;
+    }
+
+    @keyframes fadeIn {
+        from { opacity: 0; transform: translateY(6px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+
+    .donation-receiving-info-area {
+        margin-bottom: 20px;
+    }
+
+    .donation-header-title { color: #8b0000; margin-bottom: 8px; font-weight: 700; }
+    .donation-header-subtitle { color: #52525b; margin-bottom: 12px; font-size: 13.5px; }
+    .qr-image-area { display: flex; gap: 10px; flex-wrap: wrap; }
+    .thank-you-message { text-align: center; color: #2e7d32; margin-top: 20px; font-weight: 700; }
+
+    /* =========================================================
+       DARK THEME OVERRIDES
+       ========================================================= */
+    :global(.dark) .view-toggle { background: #18181b; border-color: #27272a; }
+    :global(.dark) .toggle-btn { color: #a1a1aa; }
+    :global(.dark) .pagoda-list-container { background: #09090b; border-color: #27272a; }
+    :global(.dark) .group-title { color: #f59e0b; border-bottom-color: #3f3f46; }
+    :global(.dark) .sub-group-title { background: #27272a; color: #d4d4d8; }
+    :global(.dark) .list-item { background: #18181b; border-color: #27272a; }
+    :global(.dark) .list-item:hover { background: #27272a; border-color: #f59e0b; }
+    :global(.dark) .list-item.active { background: rgba(245, 158, 11, 0.15) !important; border-color: #f59e0b; box-shadow: inset 4px 0 0 #f59e0b; }
+    :global(.dark) .item-title { color: #ffffff !important; }
+    :global(.dark) .list-item.active .item-title { color: #fbbf24 !important; }
+    :global(.dark) .item-address { color: #a1a1aa !important; }
+    :global(.dark) .list-item.active .item-address { color: #d4d4d8 !important; }
+    :global(.dark) .info-sidebar { background: #18181b; border-color: #27272a; }
+    :global(.dark) .donation-header-title { color: #f87171; }
+    :global(.dark) .donation-header-subtitle { color: #a1a1aa; }
+
+    /* =========================================================
+       RESPONSIVE CHO MOBILE & TABLET
+       ========================================================= */
+    @media (max-width: 900px) {
+        .map-layout {
+            flex-direction: column;
+            gap: 16px;
+        }
+
+        .sidebar-left {
+            width: 100%;
+        }
+
+        .pagoda-list-container {
+            height: auto;
+            max-height: 280px; /* Giảm chiều cao danh sách trên di động để nhường không gian cho nội dung chi tiết */
+        }
+
+        .info-sidebar {
+            width: 100%;
+            padding: 16px;
+        }
+
+        .qr-image-area img {
+            width: 100% !important;
+            max-width: 280px;
+        }
+    }
+</style>
+
+<script is:inline>
+  document.addEventListener('DOMContentLoaded', () => {
+    // 1. Chuyển đổi Dạng xem
+    const toggleBtns = document.querySelectorAll('.toggle-btn');
+    const viewContents = document.querySelectorAll('.view-content');
+
+    toggleBtns.forEach(btn => {
+      btn.addEventListener('click', () => {
+        const view = btn.getAttribute('data-view');
+        toggleBtns.forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+
+        viewContents.forEach(content => {
+          content.classList.remove('active');
+          if (content.classList.contains(`view-${view}`)) {
+            content.classList.add('active');
+          }
+        });
+      });
+    });
+
+    // 2. Kích hoạt Thiền viện & Tự động cuộn đến Nội dung trên Di động
+    const triggerItems = document.querySelectorAll('.trigger-item');
+    const panels = document.querySelectorAll('.info-panel');
+    const infoSidebar = document.getElementById('infoSidebar');
+
+    function activatePagoda(id, isClick = false) {
+      triggerItems.forEach(item => {
+        if (item.getAttribute('data-id') === id) {
+          item.classList.add('active');
+        } else {
+          item.classList.remove('active');
+        }
+      });
+
+      panels.forEach(panel => panel.classList.remove('active'));
+      const activePanel = document.getElementById(`panel-${id}`);
+      if (activePanel) {
+        activePanel.classList.add('active');
+      }
+
+      // Khi người dùng bấm trên Mobile (< 900px), tự động cuộn nhẹ xuống khung thông tin
+      if (isClick && window.innerWidth <= 900 && infoSidebar) {
+        infoSidebar.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }
+    }
+
+    triggerItems.forEach(item => {
+/*      item.addEventListener('mouseenter', () => {
+        const targetId = item.getAttribute('data-id');
+        activatePagoda(targetId, false);
+      });*/
+
+      item.addEventListener('click', () => {
+        const targetId = item.getAttribute('data-id');
+        activatePagoda(targetId, true);
+      });
+    });
+  });
+</script>

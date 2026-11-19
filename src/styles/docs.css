@@ -1,0 +1,105 @@
+@layer base {
+    html {
+        font-family: Poppins, system-ui, sans-serif;
+        scroll-behavior: smooth;
+
+        @apply bg-brand-gray-50 text-brand-gray-900 antialiased;
+    }
+
+    body {
+        @apply min-h-screen flex flex-col;
+    }
+
+    p {
+        font-weight: 400;
+    }
+
+    /* Custom scrollbar */
+    ::-webkit-scrollbar {
+        width: 8px;
+    }
+
+    ::-webkit-scrollbar-track {
+        background: var(--sgkb-scrollbar-track);
+    }
+
+    ::-webkit-scrollbar-thumb {
+        background: var(--sgkb-scrollbar-thumb);
+        border-radius: 4px;
+    }
+
+    ::-webkit-scrollbar-thumb:hover {
+        background: var(--sgkb-scrollbar-thumb-hover);
+    }
+}
+
+/* Animations from legacy CSS */
+@keyframes slideDown {
+    from {
+        opacity: 0;
+        transform: translateY(-10px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.animate-slide-down {
+    animation: slideDown 0.2s ease-out;
+}
+
+/* Glassmorphism utility */
+.glass {
+    background: var(--sgkb-overlay-soft);
+    backdrop-filter: blur(10px);
+    border: 1px solid var(--sgkb-overlay-soft);
+}
+
+/* Layout Utilities */
+.container-wide {
+    max-width: 1440px;
+    margin-left: auto;
+    margin-right: auto;
+    padding-left: 1.25rem;
+    padding-right: 1.25rem;
+}
+
+@media (width >= 1024px) {
+    .container-wide {
+        padding-left: 3rem;
+        padding-right: 3rem;
+    }
+}
+
+/* Responsive Prose Optimizations */
+.prose table {
+    display: block;
+    width: 100%;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    border-collapse: collapse;
+}
+
+.prose pre {
+    @apply text-sm sm:text-base;
+
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+}
+
+/* Ensure images don't overflow */
+.prose img {
+    @apply max-w-full h-auto mx-auto;
+}
+
+/* Hide scrollbars but keep functionality if needed */
+.no-scrollbar::-webkit-scrollbar {
+    display: none;
+}
+
+.no-scrollbar {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+}

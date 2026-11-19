@@ -1,0 +1,56 @@
+---
+import Layout from "@/layouts/Layout.astro";
+import "@/styles/badge/badge.css";
+import { TAG_MAP } from "@/utils/getMarkdownContent.ts";
+import PostTitle from "@/components/post/PostTitle.astro";
+import PostExcerpt from "@/components/post/PostExcerpt.astro";
+import PostDateTime from "@/components/post/PostDateTime.astro";
+import ItemReadAll from "@/components/post/ItemReadAll.astro";
+import Breadcrumb from "@/components/ui/breadcrumbs/Breadcrumb.astro";
+import { cleanSlug } from "@/utils/helper.ts";
+
+export async function getStaticPaths() {
+  return Object.entries(TAG_MAP).map(([tag, { posts }]) => {
+    const tagSlug = cleanSlug(tag);
+    return {
+      params: { tag: tagSlug },
+      props: { tag, posts }
+    };
+  });
+}
+
+const { tag, posts } = Astro.props;
+const base = import.meta.env.BASE_URL;
+const description = `Tất cả bài viết gắn tag ${tag}`;
+---
+
+<Layout title={tag} description={description} showSidebar={true}>
+  <div class="badge-page">
+    <header class="page-header">
+      <h1 class="page-title">{tag}</h1>
+      <p class="page-description">{posts.length} bài viết có tag này</p>
+      <hr class="page-rule" />
+    </header>
+
+    <!-- ✅ Breadcrumb -->
+    <Breadcrumb collection={'Tất cả tag'} title={tag} />
+
+    <div class="posts-list">
+      {posts.map((post: any) => (
+          <article class="post-item">
+            <h2 class="post-title">
+              <PostTitle post={post} />
+            </h2>
+
+            <div class="post-meta">
+              <PostDateTime post={post} />
+            </div>
+
+            <PostExcerpt frontmatter={post.frontmatter} />
+          </article>
+      ))}
+    </div>
+
+    <ItemReadAll type="tags" />
+  </div>
+</Layout>

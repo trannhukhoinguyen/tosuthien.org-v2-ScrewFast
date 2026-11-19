@@ -1,0 +1,59 @@
+---
+import "@/styles/badge/badge.css";
+import Layout from "@/layouts/Layout.astro";
+import { CATEGORY_MAP } from "@/utils/getMarkdownContent.ts";
+import PostTitle from "@/components/post/PostTitle.astro";
+import PostReadMore from "@/components/post/PostReadMore.astro";
+import PostDateTime from "@/components/post/PostDateTime.astro";
+import PostExcerpt from "@/components/post/PostExcerpt.astro";
+import ItemReadAll from "@/components/post/ItemReadAll.astro";
+import Breadcrumb from "@/components/ui/breadcrumbs/Breadcrumb.astro";
+import { cleanSlug } from "@/utils/helper.ts";
+
+export async function getStaticPaths() {
+  return Object.entries(CATEGORY_MAP).map(([category, { posts }]) => {
+    const categorySlug = cleanSlug(category);
+    return {
+      params: { category: categorySlug },
+      props: { category, posts }
+    };
+  });
+}
+
+const { category, posts } = Astro.props;
+const base = import.meta.env.BASE_URL;
+const title = "Category";
+const description = `Tất cả bài viết về ${category}`;
+---
+
+<Layout title={category} description={description} showSidebar={true}>
+  <div class="badge-page">
+    <header class="page-header">
+      <h1 class="page-title">{category}</h1>
+      <p class="page-description">{posts.length} bài viết trong category này</p>
+      <hr class="page-rule" />
+    </header>
+
+    <!-- ✅ Breadcrumb -->
+    <Breadcrumb collection={'Tất cả category'} title={category} />
+
+    <div class="posts-list">
+      {
+        posts.map((post: any) => (
+          <article class="post-item">
+            <h2 class="post-title">
+              <PostTitle post={post} />
+            </h2>
+
+            <div class="post-meta">
+              <PostDateTime post={post} />
+            </div>
+
+            <PostExcerpt frontmatter={post.frontmatter} />
+          </article>
+      ))}
+    </div>
+
+    <ItemReadAll type="categories" />
+  </div>
+</Layout>
